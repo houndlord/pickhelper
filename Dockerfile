@@ -17,9 +17,7 @@ FROM alpine:latest
 
 RUN apk add --no-cache \
     wget \
-    unzip \
-    libstdc++ \
-    chromium-chromedriver
+    unzip 
 
 # Verify ChromeDriver installation
 RUN /usr/bin/chromedriver --version
