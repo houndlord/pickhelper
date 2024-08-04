@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"unicode"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -84,12 +85,33 @@ func ScrapeChampions() ([]Champion, error) {
 	return champions, nil
 }
 
+func transformChampionName(name string) string {
+	// Convert to lowercase
+	name = strings.ToLower(name)
+
+	// Remove apostrophes
+	name = strings.ReplaceAll(name, "'", "")
+
+	// Replace spaces with empty string
+	name = strings.ReplaceAll(name, " ", "")
+
+	// Remove any non-alphanumeric characters
+	return strings.Map(func(r rune) rune {
+		if unicode.IsLetter(r) || unicode.IsDigit(r) {
+			return r
+		}
+		return -1
+	}, name)
+}
+
 func ScrapeMatchups(champName string) (map[string][]Matchup, error) {
 	roles := []string{"top", "jungle", "mid", "adc", "support"}
 	matchups := make(map[string][]Matchup)
 
+	urlChampName := transformChampionName(champName)
+
 	for _, role := range roles {
-		url := fmt.Sprintf("https://www.op.gg/champions/%s/counters/%s", strings.ToLower(champName), role)
+		url := fmt.Sprintf("https://www.op.gg/champions/%s/counters/%s", urlChampName, role)
 		filename := fmt.Sprintf("%s_%s_matchups.html", champName, role)
 
 		// Download the page using wget
