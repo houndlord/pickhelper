@@ -177,6 +177,7 @@ func startScraping(db *DB) {
 			log.Printf("New patch detected or first run: %s", currentPatch.Version)
 
 			status.CurrentPatch = currentPatch.Version
+			// Don't set LastScrapedPatch here, it will be set after scraping is complete
 			status.IsUpdating = true
 			if err := db.UpdateScrapingStatus(status); err != nil {
 				log.Printf("Error updating scraping status: %v", err)

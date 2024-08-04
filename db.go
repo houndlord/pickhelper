@@ -78,12 +78,20 @@ func (db *DB) UpdateScrapingStatus(status ScrapingStatus) error {
 		return fmt.Errorf("current_patch cannot be empty")
 	}
 
+	// If last_scraped_patch is empty, set it to NULL in the database
+	var lastScrapedPatch interface{}
+	if status.LastScrapedPatch == "" {
+		lastScrapedPatch = nil
+	} else {
+		lastScrapedPatch = status.LastScrapedPatch
+	}
+
 	_, err := db.Exec(`
         INSERT INTO scraping_status (id, current_patch, last_scraped_patch, is_updating)
         VALUES (1, $1, $2, $3)
         ON CONFLICT (id) DO UPDATE 
         SET current_patch = $1, last_scraped_patch = $2, is_updating = $3
-    `, status.CurrentPatch, status.LastScrapedPatch, status.IsUpdating)
+    `, status.CurrentPatch, lastScrapedPatch, status.IsUpdating)
 	return err
 }
 
