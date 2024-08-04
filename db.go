@@ -74,34 +74,17 @@ func (db *DB) SavePatch(patch PatchInfo) error {
 }
 
 func (db *DB) UpdateScrapingStatus(status ScrapingStatus) error {
-	tx, err := db.Begin()
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-
-	// First, ensure the patch exists in the patches table
-	_, err = tx.Exec(`
-		INSERT INTO patches (version)
-		VALUES ($1)
-		ON CONFLICT (version) DO NOTHING
-	`, status.CurrentPatch)
-	if err != nil {
-		return err
+	if status.CurrentPatch == "" {
+		return fmt.Errorf("current_patch cannot be empty")
 	}
 
-	// Now update the scraping status
-	_, err = tx.Exec(`
-		INSERT INTO scraping_status (id, current_patch, last_scraped_patch, is_updating)
-		VALUES (1, $1, $2, $3)
-		ON CONFLICT (id) DO UPDATE 
-		SET current_patch = $1, last_scraped_patch = $2, is_updating = $3
-	`, status.CurrentPatch, status.LastScrapedPatch, status.IsUpdating)
-	if err != nil {
-		return err
-	}
-
-	return tx.Commit()
+	_, err := db.Exec(`
+        INSERT INTO scraping_status (id, current_patch, last_scraped_patch, is_updating)
+        VALUES (1, $1, $2, $3)
+        ON CONFLICT (id) DO UPDATE 
+        SET current_patch = $1, last_scraped_patch = $2, is_updating = $3
+    `, status.CurrentPatch, status.LastScrapedPatch, status.IsUpdating)
+	return err
 }
 
 func (db *DB) GetCurrentPatch() (PatchInfo, error) {
@@ -167,13 +150,14 @@ func (db *DB) SaveMatchups(champName string, role string, matchups []Matchup, pa
 func (db *DB) GetScrapingStatus() (ScrapingStatus, error) {
 	var status ScrapingStatus
 	err := db.QueryRow(`
-		SELECT current_patch, last_scraped_patch, is_updating
-		FROM scraping_status
-		WHERE id = 1
-	`).Scan(&status.CurrentPatch, &status.LastScrapedPatch, &status.IsUpdating)
+        SELECT current_patch, last_scraped_patch, is_updating
+        FROM scraping_status
+        WHERE id = 1
+    `).Scan(&status.CurrentPatch, &status.LastScrapedPatch, &status.IsUpdating)
 
 	if err == sql.ErrNoRows {
-		return db.InitializeScrapingStatus()
+		// If no row exists, return an empty status without an error
+		return ScrapingStatus{}, nil
 	}
 
 	return status, err

@@ -173,7 +173,7 @@ func startScraping(db *DB) {
 		log.Printf("Current scraping status: CurrentPatch=%s, LastScrapedPatch=%s, IsUpdating=%v",
 			status.CurrentPatch, status.LastScrapedPatch, status.IsUpdating)
 
-		if currentPatch.Version != status.CurrentPatch || status.LastScrapedPatch == "" {
+		if status.CurrentPatch == "" || currentPatch.Version != status.CurrentPatch || status.LastScrapedPatch == "" {
 			log.Printf("New patch detected or first run: %s", currentPatch.Version)
 
 			status.CurrentPatch = currentPatch.Version
@@ -190,28 +190,34 @@ func startScraping(db *DB) {
 			champions, err := ScrapeChampions()
 			if err != nil {
 				log.Printf("Error scraping champions: %v", err)
-			} else {
-				log.Printf("Scraped %d champions", len(champions))
-				for _, champ := range champions {
-					if err := db.SaveChampion(champ); err != nil {
-						log.Printf("Error saving champion %s: %v", champ.Name, err)
-						continue
-					}
-					log.Printf("Scraping matchups for %s", champ.Name)
-					matchups, err := ScrapeMatchups(champ.Name)
-					if err != nil {
-						log.Printf("Error scraping matchups for %s: %v", champ.Name, err)
-						continue
-					}
-					for role, roleMatchups := range matchups {
-						log.Printf("Saving %d matchups for %s in %s role", len(roleMatchups), champ.Name, role)
-						if err := db.SaveMatchups(champ.Name, role, roleMatchups, currentPatch.Version); err != nil {
-							log.Printf("Error saving matchups for %s in %s: %v", champ.Name, role, err)
-						}
-					}
-					log.Printf("Finished scraping matchups for %s", champ.Name)
-					time.Sleep(scrapingDelay)
+				status.IsUpdating = false
+				if updateErr := db.UpdateScrapingStatus(status); updateErr != nil {
+					log.Printf("Error updating scraping status after champion scraping failure: %v", updateErr)
 				}
+				time.Sleep(1 * time.Hour)
+				continue
+			}
+			log.Printf("Scraped %d champions", len(champions))
+
+			for _, champ := range champions {
+				if err := db.SaveChampion(champ); err != nil {
+					log.Printf("Error saving champion %s: %v", champ.Name, err)
+					continue
+				}
+				log.Printf("Scraping matchups for %s", champ.Name)
+				matchups, err := ScrapeMatchups(champ.Name)
+				if err != nil {
+					log.Printf("Error scraping matchups for %s: %v", champ.Name, err)
+					continue
+				}
+				for role, roleMatchups := range matchups {
+					log.Printf("Saving %d matchups for %s in %s role", len(roleMatchups), champ.Name, role)
+					if err := db.SaveMatchups(champ.Name, role, roleMatchups, currentPatch.Version); err != nil {
+						log.Printf("Error saving matchups for %s in %s: %v", champ.Name, role, err)
+					}
+				}
+				log.Printf("Finished scraping matchups for %s", champ.Name)
+				time.Sleep(scrapingDelay)
 			}
 
 			log.Printf("Waiting for %v before serving new data", patchUpdateDelay)
