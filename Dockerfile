@@ -19,9 +19,6 @@ RUN apk add --no-cache \
     wget \
     unzip 
 
-# Verify ChromeDriver installation
-RUN /usr/bin/chromedriver --version
-
 WORKDIR /app
 
 COPY --from=builder /app/main .
