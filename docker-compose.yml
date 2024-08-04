@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - DATABASE_URL=postgres://user:password@db:5432/lolcounter?sslmode=disable
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - lolcounter-network
+
+  db:
+    image: postgres:13
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=lolcounter
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d lolcounter"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - lolcounter-network
+
+networks:
+  lolcounter-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
