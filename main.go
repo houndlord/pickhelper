@@ -11,6 +11,7 @@ import (
 
 const patchUpdateDelay = 48 * time.Hour
 const scrapingDelay = 30 * time.Second
+const scrapingInterval = 6 * time.Hour
 
 func main() {
 	log.Println("Application starting...")
@@ -177,7 +178,6 @@ func startScraping(db *DB) {
 			log.Printf("New patch detected or first run: %s", currentPatch.Version)
 
 			status.CurrentPatch = currentPatch.Version
-			// Don't set LastScrapedPatch here, it will be set after scraping is complete
 			status.IsUpdating = true
 			if err := db.UpdateScrapingStatus(status); err != nil {
 				log.Printf("Error updating scraping status: %v", err)
@@ -236,7 +236,7 @@ func startScraping(db *DB) {
 			log.Println("No new patch detected, skipping full scrape")
 		}
 
-		log.Println("Sleeping for 6 hours before next scraping cycle")
-		time.Sleep(6 * time.Hour)
+		log.Printf("Sleeping for %v before next scraping cycle", scrapingInterval)
+		time.Sleep(scrapingInterval)
 	}
 }
