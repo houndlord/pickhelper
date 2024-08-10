@@ -157,18 +157,29 @@ func (db *DB) SaveMatchups(champName string, role string, matchups []Matchup, pa
 
 func (db *DB) GetScrapingStatus() (ScrapingStatus, error) {
 	var status ScrapingStatus
+	var lastScrapedPatch sql.NullString
+
 	err := db.QueryRow(`
         SELECT current_patch, last_scraped_patch, is_updating
         FROM scraping_status
         WHERE id = 1
-    `).Scan(&status.CurrentPatch, &status.LastScrapedPatch, &status.IsUpdating)
+    `).Scan(&status.CurrentPatch, &lastScrapedPatch, &status.IsUpdating)
 
 	if err == sql.ErrNoRows {
-		// If no row exists, return an empty status without an error
 		return ScrapingStatus{}, nil
 	}
 
-	return status, err
+	if err != nil {
+		return ScrapingStatus{}, err
+	}
+
+	if lastScrapedPatch.Valid {
+		status.LastScrapedPatch = lastScrapedPatch.String
+	} else {
+		status.LastScrapedPatch = ""
+	}
+
+	return status, nil
 }
 
 func (db *DB) InitializeScrapingStatus() (ScrapingStatus, error) {
@@ -264,4 +275,27 @@ func (db *DB) GetAllMatchups(champName string, role string, patch string) ([]Mat
 	log.Printf("Retrieved %d matchups", len(matchups))
 
 	return matchups, nil
+}
+
+func (db *DB) GetAllChampions() ([]Champion, error) {
+	rows, err := db.Query("SELECT name, avatar_url FROM champions ORDER BY name")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var champions []Champion
+	for rows.Next() {
+		var c Champion
+		if err := rows.Scan(&c.Name, &c.AvatarURL); err != nil {
+			return nil, err
+		}
+		champions = append(champions, c)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return champions, nil
 }

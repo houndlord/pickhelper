@@ -86,6 +86,14 @@ func ScrapeChampions() ([]Champion, error) {
 }
 
 func transformChampionName(name string) string {
+	// Handle special cases
+	switch strings.ToLower(name) {
+	case "wukong":
+		return "monkeyking"
+	case "nunu & willump":
+		return "nunu"
+	}
+
 	// Convert to lowercase
 	name = strings.ToLower(name)
 
@@ -94,6 +102,9 @@ func transformChampionName(name string) string {
 
 	// Replace spaces with empty string
 	name = strings.ReplaceAll(name, " ", "")
+
+	// Remove periods (for Dr. Mundo)
+	name = strings.ReplaceAll(name, ".", "")
 
 	// Remove any non-alphanumeric characters
 	return strings.Map(func(r rune) rune {

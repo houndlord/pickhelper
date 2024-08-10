@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -40,6 +41,9 @@ func main() {
 	// Set up REST API
 	log.Println("Setting up REST API...")
 	r := gin.Default()
+	config := cors.DefaultConfig()
+	config.AllowOrigins = []string{"http://localhost:3000"}
+	r.Use(cors.New(config))
 
 	r.GET("/matchups/:champion/:role", func(c *gin.Context) {
 		champion := c.Param("champion")
@@ -137,6 +141,22 @@ func main() {
 
 		log.Printf("Returning %d matchups for %s in %s role", len(matchups), champion, role)
 		c.JSON(200, gin.H{"patch": patch, "matchups": matchups})
+	})
+
+	r.GET("/champions", func(c *gin.Context) {
+		champions, err := db.GetAllChampions()
+		if err != nil {
+			log.Printf("Error getting all champions: %v", err)
+			c.JSON(500, gin.H{"error": "Internal server error"})
+			return
+		}
+
+		if len(champions) == 0 {
+			c.JSON(404, gin.H{"error": "No champions found"})
+			return
+		}
+
+		c.JSON(200, gin.H{"champions": champions})
 	})
 
 	log.Println("Starting server on :8080")
