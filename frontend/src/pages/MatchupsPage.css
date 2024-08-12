@@ -32,12 +32,25 @@
     border-color: #007bff;
   }
   
-  .loading, .error {
+  .loading, .error, .no-matchups {
     text-align: center;
     margin-top: 20px;
     font-size: 18px;
+    padding: 20px;
+    border-radius: 8px;
+  }
+
+  .loading {
+    color: #007bff;
+    background-color: #e6f2ff;
   }
   
   .error {
     color: #dc3545;
+    background-color: #ffe6e6;
+  }
+
+  .no-matchups {
+    color: #856404;
+    background-color: #fff3cd;
   }

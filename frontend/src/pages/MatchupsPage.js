@@ -21,6 +21,11 @@ function MatchupsPage() {
           getMatchups(champion, role),
           getAllChampions()
         ]);
+        
+        if (matchupsData.error) {
+          throw new Error(matchupsData.error);
+        }
+        
         setMatchups(matchupsData);
         
         if (Array.isArray(championsData)) {
@@ -34,7 +39,7 @@ function MatchupsPage() {
         }
       } catch (err) {
         console.error("Error fetching data:", err);
-        setError(`Failed to load data: ${err.message}`);
+        setError(err.message || 'An unexpected error occurred');
       } finally {
         setLoading(false);
       }
@@ -46,10 +51,6 @@ function MatchupsPage() {
     matchups.matchups.filter(m => 
       m.Champion.toLowerCase().includes(searchTerm.toLowerCase())
     ) : [];
-
-  if (loading) return <div className="loading">Loading...</div>;
-  if (error) return <div className="error">{error}</div>;
-  if (!matchups || !matchups.matchups) return <div className="error">No matchup data available</div>;
 
   return (
     <div className="matchups-page">
@@ -63,7 +64,14 @@ function MatchupsPage() {
           className="search-input"
         />
       </div>
-      <MatchupList matchups={{...matchups, matchups: filteredMatchups}} champions={champions} />
+      {loading && <div className="loading">Loading...</div>}
+      {error && <div className="error">{error}</div>}
+      {!loading && !error && matchups && matchups.matchups && matchups.matchups.length > 0 && (
+        <MatchupList matchups={{...matchups, matchups: filteredMatchups}} champions={champions} />
+      )}
+      {!loading && !error && (!matchups || !matchups.matchups || matchups.matchups.length === 0) && (
+        <div className="no-matchups">No matchups found for {champion} in {role} role.</div>
+      )}
     </div>
   );
 }
