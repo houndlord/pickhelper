@@ -1,0 +1,32 @@
+name: deploy
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install SSH Key
+      uses: shimataro/ssh-key-action@v2
+      with:
+        key: ${{ secrets.SERVER_SSH_KEY }}
+        known_hosts: ${{ secrets.KNOWN_HOSTS }}
+
+    - name: Deploy to EC2
+      env:
+        HOST: ${{ secrets.HOST }}
+        USER: ${{ secrets.USER }}
+      run: |
+        ssh $USER@$HOST << EOF
+          cd ~/pickhelper
+          git pull origin main
+          docker-compose -f docker-compose-prod.yml down
+          docker-compose -f docker-compose-prod.yml build
+          docker-compose -f docker-compose-prod.yml up -d
+          docker system prune -af
+        EOF
