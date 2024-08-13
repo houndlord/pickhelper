@@ -54,3 +54,27 @@
     color: #856404;
     background-color: #fff3cd;
   }
+
+  .error-message {
+    background-color: #fff3cd;
+    border: 1px solid #ffeeba;
+    border-radius: 5px;
+    color: #856404;
+    margin: 20px auto;
+    max-width: 600px;
+    padding: 20px;
+    text-align: left;
+  }
+  
+  .error-message h2 {
+    color: #856404;
+    margin-top: 0;
+  }
+  
+  .error-message ul {
+    padding-left: 20px;
+  }
+  
+  .error-message p:last-child {
+    margin-bottom: 0;
+  }
