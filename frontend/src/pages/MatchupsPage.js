@@ -52,28 +52,40 @@ function MatchupsPage() {
       m.Champion.toLowerCase().includes(searchTerm.toLowerCase())
     ) : [];
 
-  return (
-    <div className="matchups-page">
-      <h1 className="page-title">Counterpicks for {champion} ({role})</h1>
-      <div className="search-container">
-        <input
-          type="text"
-          placeholder="Search counterpicks..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="search-input"
-        />
+    return (
+      <div className="matchups-page">
+        <h1 className="page-title">Counterpicks for {champion} ({role})</h1>
+        <div className="search-container">
+          <input
+            type="text"
+            placeholder="Search counterpicks..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="search-input"
+          />
+        </div>
+        {loading && <div className="loading">Loading...</div>}
+        {!loading && error && (
+          <div className="error-message">
+            <h2>Oops! No data available</h2>
+            <p>We couldn't find any matchup data for {champion} in the {role} role. This might be because:</p>
+            <ul>
+              <li>{champion} isn't commonly played as a {role}</li>
+              <li>We haven't gathered enough data for this combination yet</li>
+            </ul>
+            <p>You could try:</p>
+            <ul>
+              <li>Checking a different role for {champion}</li>
+              <li>Looking up a more popular champion for the {role} role</li>
+            </ul>
+            <p>If you think this is a mistake, please try again later or let us know!</p>
+          </div>
+        )}
+        {!loading && !error && matchups && matchups.matchups && matchups.matchups.length > 0 && (
+          <MatchupList matchups={{...matchups, matchups: filteredMatchups}} champions={champions} />
+        )}
       </div>
-      {loading && <div className="loading">Loading...</div>}
-      {error && <div className="error">{error}</div>}
-      {!loading && !error && matchups && matchups.matchups && matchups.matchups.length > 0 && (
-        <MatchupList matchups={{...matchups, matchups: filteredMatchups}} champions={champions} />
-      )}
-      {!loading && !error && (!matchups || !matchups.matchups || matchups.matchups.length === 0) && (
-        <div className="no-matchups">No matchups found for {champion} in {role} role.</div>
-      )}
-    </div>
-  );
-}
-
-export default MatchupsPage;
+    );
+  }
+  
+  export default MatchupsPage;
